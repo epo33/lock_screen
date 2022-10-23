@@ -1,3 +1,5 @@
-## 0.0.1
+## 0.9.0
 
-* TODO: Describe initial release.
+* Initial version
+
+* Incomplete test code (test/lock_screen_test.dart)

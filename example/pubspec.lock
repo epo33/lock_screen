@@ -73,7 +73,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "1.0.0+0"
+    version: "0.9.0"
   matcher:
     dependency: transitive
     description:
@@ -98,9 +98,9 @@ packages:
   multi_listenable:
     dependency: transitive
     description:
-      name: multi_listenable
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "../../multi_listenable"
+      relative: true
+    source: path
     version: "0.9.3"
   path:
     dependency: transitive

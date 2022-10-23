@@ -11,9 +11,13 @@ void main() {
       const operation = "OPERATION";
       final clickCount = ValueNotifier(0);
       final step1 = ProgressStep(progress: 0, message: "STEP1");
-      final step2 = ProgressStep(progress: 0.5, message: "STEP2");
+      final step2 = ProgressStep(
+        progress: 0.5,
+        message: "STEP2",
+        cancelButton: const LockScreenCancel(),
+      );
       final step3 = ProgressStep(progress: 1, message: "STEP3");
-      final step4 = ProgressStep(message: "STEP4");
+      final step4 = ProgressStep(message: "STEP4", width: 600, height: 400);
       final steps = [step1, step2, step3, step4];
       final jobEnded = Completer();
 
@@ -68,11 +72,15 @@ class ProgressStep {
     this.progress,
     this.message,
     this.cancelButton,
+    this.width,
+    this.height,
   });
 
   final double? progress;
   final String? message;
-  final Widget? cancelButton;
+  final LockScreenCancel? cancelButton;
+  final double? width;
+  final double? height;
   final started = Completer();
   final ended = Completer();
 }
@@ -97,13 +105,11 @@ class TestWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: LockScreenWidget(
-        child: ScreenContent(
-          operation: operation,
-          clickCount: clickCount,
-          jobEnded: jobEnded,
-          steps: steps,
-        ),
+      home: ScreenContent(
+        operation: operation,
+        clickCount: clickCount,
+        jobEnded: jobEnded,
+        steps: steps,
       ),
     );
   }
@@ -138,17 +144,17 @@ class ScreenContent extends StatelessWidget {
       );
 
   void longTask(BuildContext context) async {
-    final lockScreen = LockScreen.of(context);
-    await lockScreen.forJob(
-      context,
+    await LockScreen.forJob(
+      context: context,
       operation: operation,
-      autoCancel: false,
-      job: (updater) async {
+      job: (display) async {
         for (final step in steps) {
           await step.started.future;
-          updater.setMessage(step.message);
-          updater.setCancelButton(step.cancelButton);
-          updater.setProgress(step.progress);
+          display.copyWith(
+            message: step.message,
+            cancelButton: step.cancelButton,
+            progress: step.progress,
+          );
           step.ended.complete();
         }
       },

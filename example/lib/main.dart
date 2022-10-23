@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        home: LockScreenWidget(child: const HomePage()),
+        home: const HomePage(),
       );
 }
 
@@ -63,6 +63,7 @@ class HomePage extends StatelessWidget {
           TaskWidget(
             const Duration(seconds: 4),
             message: "4s task with custom widget",
+            
             widget: Container(
               padding: const EdgeInsets.all(16),
               color: Colors.white,
@@ -127,24 +128,21 @@ class TaskWidget extends StatelessWidget {
       );
 
   void doJob(BuildContext context) async {
-    final lockScreen = LockScreen.of(context);
-    await lockScreen.forJob(
-      context,
-      autoCancel: cancelable,
+    await LockScreen.forJob(
+      context: context,
       operation: "${duration.inSeconds}s task",
-      height: 250,
-      showWidget: widget,
-      autoCancelText: "Annuler",
-      job: (updater) async {
+      display: LockScreenDisplay(autoCancel: cancelable),
+      job: (display) async {
         var now = DateTime.now();
         final ends = now.add(duration);
         do {
           await Future.delayed(const Duration(milliseconds: 100));
           now = DateTime.now();
           final msDiff = ends.difference(now).inMilliseconds;
-          updater.setProgress(1 - (msDiff / duration.inMilliseconds));
-          updater
-              .setMessage("Countdown : ${(msDiff / 1000).toStringAsFixed(1)}s");
+          display.copyWith(
+            progress: 1 - (msDiff / duration.inMilliseconds),
+            message: "Countdown : ${(msDiff / 1000).toStringAsFixed(1)}s",
+          );
         } while (now.isBefore(ends));
       },
     );
