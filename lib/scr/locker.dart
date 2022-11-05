@@ -1,22 +1,28 @@
 part of lock_screen;
 
-class LockScreen {
+class LockScreen<T> {
   static LockScreenErrorHandler? defaultErrorHandler;
 
-  static Future forJob({
+  static NavigatorObserver get observer => _ObserveNavigation.create();
+
+  static Future<T?> forJob<T>({
     required BuildContext context,
     required LockScreenJob job,
     LockScreenDisplay display = const _LockScreenDisplay(),
     String? operation,
     LockScreenErrorHandler? onError,
   }) {
-    final locker = LockScreen._(
-      context,
-      display,
-      operation,
+    final locker = LockScreen<T>._(display, operation);
+    // Lock all screen interation
+    final dialog = _LockScreenDialog(
+      lockScreen: locker,
+      lockStateChange: locker._notifyChanges,
+      display: locker._proxy,
+      operation: operation,
     );
+    dialog.showLockScreenDialog(context);
 
-    return locker.runJob(job, onError);
+    return locker._runJob(dialog, job, onError);
   }
 
   LockScreenDisplay get display => _display;
@@ -27,15 +33,12 @@ class LockScreen {
 
   // Private part
 
-  LockScreen._(
-    this._context,
-    this._display,
-    this._operation,
-  ) {
-    _proxy = _LockScreenDisplayProxy(this);
+  LockScreen._(this._display, this._operation) {
+    _proxy = _LockScreenDisplayProxy<T>(this);
   }
 
-  Future runJob(
+  Future<T?> _runJob(
+    _LockScreenDialog dialog,
     LockScreenJob job,
     LockScreenErrorHandler? onError,
   ) async {
@@ -43,26 +46,27 @@ class LockScreen {
     _lockerStack.add(this);
     try {
       pred?._changed();
-      _showDialog().ignore();
       return await job(_proxy);
     } catch (e, s) {
       final handler = onError ?? defaultErrorHandler;
+      await dialog.close();
       if (e is LockScreenCancelError) {
         if (pred != null) rethrow;
         if (kDebugMode) {
           print("$_operation canceled");
         }
       } else if (handler != null) {
-        handler(e, s);
+        final handled = handler(e, s);
+        if (handled is Future) await handled;
       } else if (kDebugMode) {
         print(
           "${_operation == null ? "Error while running job" : _operation!} : $e\n$s",
         );
       }
+      return null;
     } finally {
       _lockerStack.removeLast();
-      _mustPopDialog = true;
-      _changed();
+      await dialog.close();
       pred?._changed();
     }
   }
@@ -72,125 +76,15 @@ class LockScreen {
     _notifyChanges.value++;
   }
 
-  Future<void> _showDialog() {
-    return showDialog(
-      context: _context,
-      barrierDismissible: false,
-      builder: (context) => ValueListenableBuilder(
-        valueListenable: _notifyChanges,
-        builder: (context, value, child) {
-          if (_mustPopDialog) {
-            // Pop the dialog as soon as possible
-            Future.delayed(
-              const Duration(milliseconds: 0),
-              () => Navigator.of(context).pop(),
-            );
-            // Don't pop twice
-            _mustPopDialog = false;
-          }
-          return _lockerStack.isEmpty || _lockerStack.last != this
-              ? const SizedBox.shrink()
-              : Dialog(
-                  alignment: Alignment.center,
-                  child: FocusScope(
-                    node: _focusNode,
-                    autofocus: true,
-                    child: Listener(
-                      behavior: HitTestBehavior.deferToChild,
-                      child: ValueListenableBuilder(
-                        valueListenable: _notifyChanges,
-                        builder: (context, _, __) => _dialogContent(context),
-                      ),
-                    ),
-                  ),
-                );
-        },
-      ),
-    );
-  }
-
-  Widget _dialogContent(BuildContext context) {
-    final userWidget = display.showWidget;
-    final btnCancel = display.cancelButton == LockScreenCancel.none
-        ? null
-        : _wrapCancelButton(context, display.cancelButton);
-    const vSpace = SizedBox(height: 16);
-
-    return userWidget != null
-        ? Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              userWidget,
-              if (btnCancel != null) const Divider(),
-              if (btnCancel != null) btnCancel,
-            ],
-          )
-        : Container(
-            width: display.width ?? 300,
-            height: display.height,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.all(
-                Radius.circular(16),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: (display.height == null)
-                  ? MainAxisSize.min
-                  : MainAxisSize.max,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                CircularProgressIndicator.adaptive(value: display.progress),
-                if (_operation != null) ...[
-                  vSpace,
-                  Text(_operation!, softWrap: true),
-                ],
-                vSpace,
-                _messageWidget(context),
-                if (btnCancel != null) ...[
-                  const Divider(height: 32),
-                  btnCancel,
-                ],
-              ],
-            ),
-          );
-  }
-
-  Widget _messageWidget(BuildContext context) {
-    final msg = display.message;
-    if (msg == null) return const SizedBox.shrink();
-    final widget = Text(
-      display.message!,
-      softWrap: true,
-    );
-    if (display.height == null) return widget;
-    return Expanded(
-      child: SingleChildScrollView(child: widget),
-    );
-  }
-
-  Widget _wrapCancelButton(BuildContext context, Widget button) =>
-      GestureDetector(
-        onTap: () => display = display.abort(),
-        child: button,
-      );
-
   void _changed() => _notifyChanges.value++;
 
-  final BuildContext _context;
-
   final String? _operation;
-
-  final _focusNode = FocusScopeNode();
 
   final _notifyChanges = ValueNotifier(0);
 
   late LockScreenDisplay _display;
 
-  late final _LockScreenDisplayProxy _proxy;
-
-  var _mustPopDialog = false;
+  late final _LockScreenDisplayProxy<T> _proxy;
 }
 
 final _lockerStack = <LockScreen>[];

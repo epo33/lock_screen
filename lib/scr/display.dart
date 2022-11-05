@@ -1,7 +1,7 @@
 part of lock_screen;
 
-abstract class LockScreenDisplay {
-  factory LockScreenDisplay({bool autoCancel = false}) => _LockScreenDisplay(
+abstract class LockScreenDisplay<T> {
+  factory LockScreenDisplay({bool autoCancel = false}) => _LockScreenDisplay<T>(
         cancelButton:
             autoCancel ? const LockScreenCancel() : LockScreenCancel.none,
       );
@@ -40,7 +40,7 @@ abstract class LockScreenDisplay {
   LockScreenDisplay abort();
 }
 
-class _LockScreenDisplay implements LockScreenDisplay {
+class _LockScreenDisplay<T> implements LockScreenDisplay<T> {
   const _LockScreenDisplay({
     this.progress,
     this.message,
@@ -80,6 +80,7 @@ class _LockScreenDisplay implements LockScreenDisplay {
     double? width,
     double? height,
     LockScreenCancel? cancelButton,
+    T? jobResult,
   }) =>
       _LockScreenDisplay(
         progress: progress ?? this.progress,
@@ -150,7 +151,7 @@ class _LockScreenDisplay implements LockScreenDisplay {
         );
 }
 
-class _LockScreenDisplayProxy implements LockScreenDisplay {
+class _LockScreenDisplayProxy<T> implements LockScreenDisplay<T> {
   const _LockScreenDisplayProxy(this.lockScreen);
 
   final LockScreen lockScreen;
@@ -184,6 +185,7 @@ class _LockScreenDisplayProxy implements LockScreenDisplay {
     double? width,
     double? height,
     LockScreenCancel? cancelButton,
+    T? jobResult,
   }) =>
       _setDisplay(
         _display.copyWith(
