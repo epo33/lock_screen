@@ -41,11 +41,13 @@ class _LockScreenDialog {
       }
     }
 
-    showDialog(
+    showGeneralDialog(
       context: initialContext,
       barrierDismissible: false,
+      barrierColor: Colors.white.withOpacity(0.3),
+      transitionDuration: Duration.zero,
       useRootNavigator: true,
-      builder: (context) {
+      pageBuilder: (context, _, __) {
         return ValueListenableBuilder(
           valueListenable: lockStateChange,
           builder: (context, value, child) {
@@ -57,16 +59,20 @@ class _LockScreenDialog {
             return _lockerStack.isEmpty || _lockerStack.last != lockScreen
                 ? const SizedBox.shrink()
                 : Dialog(
+                    elevation: 8,
+                    insetAnimationDuration: Duration.zero,
+                    shadowColor: Colors.grey,
                     alignment: Alignment.center,
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(
+                      Radius.circular(28.0),
+                    )),
                     child: FocusScope(
                       node: _focusNode,
                       autofocus: true,
                       child: Listener(
                         behavior: HitTestBehavior.deferToChild,
-                        child: ValueListenableBuilder(
-                          valueListenable: lockStateChange,
-                          builder: (context, _, __) => _dialogContent(context),
-                        ),
+                        child: _dialogContent(context),
                       ),
                     ),
                   );
@@ -100,13 +106,21 @@ class _LockScreenDialog {
                   : MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                CircularProgressIndicator.adaptive(value: display.progress),
                 if (operation != null) ...[
-                  vSpace,
                   Text(operation!, softWrap: true),
+                  vSpace,
                 ],
-                vSpace,
+                if (display.progress == null) ...[
+                  const CircularProgressIndicator.adaptive(),
+                  vSpace,
+                ],
                 _messageWidget(context),
+                if (display.progress != null) ...[
+                  vSpace,
+                  LinearProgressIndicator(
+                    value: display.progress,
+                  ),
+                ],
                 if (btnCancel != null) ...[
                   const Divider(height: 32),
                   btnCancel,

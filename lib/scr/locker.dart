@@ -42,6 +42,7 @@ class LockScreen<T> {
     LockScreenJob job,
     LockScreenErrorHandler? onError,
   ) async {
+    await Future.delayed(Duration(milliseconds: (2 / 60).ceil()));
     final pred = _lockerStack.isEmpty ? null : _lockerStack.last;
     _lockerStack.add(this);
     try {
