@@ -57,8 +57,10 @@ class LockScreen<T> {
           print("$_operation canceled");
         }
       } else if (handler != null) {
-        final handled = handler(e, s);
-        if (handled is Future) await handled;
+        dynamic handled = handler(e, s);
+        while (handled is Future) {
+          handled = await handled;
+        }
       } else if (kDebugMode) {
         print(
           "${_operation == null ? "Error while running job" : _operation!} : $e\n$s",
