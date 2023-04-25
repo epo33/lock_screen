@@ -9,6 +9,4 @@ part 'scr/cancel_button.dart';
 part 'scr/dialog.dart';
 part 'scr/display.dart';
 part 'scr/locker.dart';
-part 'scr/nav_observer.dart';
-part 'scr/observer.dart';
 part 'scr/types.dart';

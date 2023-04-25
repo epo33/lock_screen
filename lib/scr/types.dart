@@ -5,7 +5,8 @@ part of lock_screen;
 /// Not called if the job is canceled.
 ///
 /// Must throw an error to propagate the error to the (eventual) including job.
-typedef LockScreenErrorHandler = FutureOr<void> Function(
+typedef LockScreenErrorHandler = Future<void> Function(
+  BuildContext context,
   Object error,
   StackTrace stackTrace,
 );

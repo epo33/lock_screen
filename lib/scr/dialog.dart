@@ -16,31 +16,14 @@ class _LockScreenDialog {
 
   final String? operation;
 
-  Future<dynamic> close() {
+  Future<void> close() {
+    if (_closed) Future.value();
     _mustPopDialog = true;
     lockStateChange.value++;
     return _closeCompleter.future;
   }
 
   void showLockScreenDialog(BuildContext initialContext) {
-    final observer = _DialogNavigationObserver(this);
-
-    void restoreNavigatorState(BuildContext context) {
-      if (observer.dialogClosed) {
-        if (!_completeCalled) {
-          _completeCalled = true;
-          _closeCompleter.complete();
-        }
-      } else if (observer.canCloseDialog) {
-        Navigator.of(context, rootNavigator: true).pop();
-        assert(observer.dialogClosed);
-        assert(!_completeCalled);
-        _closeCompleter.complete();
-        _completeCalled = true;
-        observer.dispose();
-      }
-    }
-
     showGeneralDialog(
       context: initialContext,
       barrierDismissible: false,
@@ -52,11 +35,16 @@ class _LockScreenDialog {
           valueListenable: lockStateChange,
           builder: (context, value, child) {
             if (_mustPopDialog) {
-              // Pop the dialog as soon as possible
-              Future.microtask(() => restoreNavigatorState(context));
+              if (_lockerStack.isEmpty || _lockerStack.last == lockScreen) {
+                Navigator.of(context).pop();
+                _closed = true;
+                _closeCompleter.complete();
+              }
               return const SizedBox.shrink();
             }
-            return _lockerStack.isEmpty || _lockerStack.last != lockScreen
+            return _closed ||
+                    _lockerStack.isEmpty ||
+                    _lockerStack.last != lockScreen
                 ? const SizedBox.shrink()
                 : Dialog(
                     elevation: 8,
@@ -161,5 +149,6 @@ class _LockScreenDialog {
 
   bool _mustPopDialog = false;
   bool _completeCalled = false;
+  bool _closed = false;
   final _closeCompleter = Completer();
 }
