@@ -5,6 +5,7 @@ class _LockScreenDialog {
     required this.lockScreen,
     required this.lockStateChange,
     required this.display,
+    this.backgroundColor = Colors.grey,
     this.operation,
   });
 
@@ -15,6 +16,8 @@ class _LockScreenDialog {
   late LockScreenDisplay display;
 
   final String? operation;
+
+  final Color backgroundColor;
 
   Future<void> close() {
     if (_closed) Future.value();
@@ -36,9 +39,13 @@ class _LockScreenDialog {
           builder: (context, value, child) {
             if (_mustPopDialog) {
               if (_lockerStack.isEmpty || _lockerStack.last == lockScreen) {
-                Navigator.of(context).pop();
-                _closed = true;
-                _closeCompleter.complete();
+                Future.microtask(
+                  () {
+                    Navigator.of(context).pop();
+                    _closed = true;
+                    _closeCompleter.complete();
+                  },
+                );
               }
               return const SizedBox.shrink();
             }
@@ -46,24 +53,31 @@ class _LockScreenDialog {
                     _lockerStack.isEmpty ||
                     _lockerStack.last != lockScreen
                 ? const SizedBox.shrink()
-                : Dialog(
-                    elevation: 8,
-                    insetAnimationDuration: Duration.zero,
-                    shadowColor: Colors.grey,
-                    alignment: Alignment.center,
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.all(
-                      Radius.circular(28.0),
-                    )),
-                    child: FocusScope(
-                      node: _focusNode,
-                      autofocus: true,
-                      child: Listener(
-                        behavior: HitTestBehavior.deferToChild,
-                        child: _dialogContent(context),
-                      ),
-                    ),
-                  );
+                : display.message == null &&
+                        display.showWidget == null &&
+                        display.cancelButton == null
+                    ? Center(
+                        child: display.progress == null
+                            ? const CircularProgressIndicator.adaptive()
+                            : LinearProgressIndicator(value: display.progress),
+                      )
+                    : Dialog(
+                        elevation: 8,
+                        insetAnimationDuration: Duration.zero,
+                        shadowColor: backgroundColor,
+                        alignment: Alignment.center,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(28.0)),
+                        ),
+                        child: FocusScope(
+                          node: _focusNode,
+                          autofocus: true,
+                          child: Listener(
+                            behavior: HitTestBehavior.deferToChild,
+                            child: _dialogContent(context),
+                          ),
+                        ),
+                      );
           },
         );
       },
@@ -73,9 +87,7 @@ class _LockScreenDialog {
   Widget _dialogContent(BuildContext context) {
     const vSpace = SizedBox(height: 16);
     final userWidget = display.showWidget;
-    final btnCancel = display.cancelButton == LockScreenCancel.none
-        ? null
-        : _wrapCancelButton(context, display.cancelButton);
+    final btnCancel = _wrapCancelButton(context, display.cancelButton);
 
     return userWidget == null
         ? Container(
@@ -139,16 +151,17 @@ class _LockScreenDialog {
     );
   }
 
-  Widget _wrapCancelButton(BuildContext context, Widget button) =>
-      GestureDetector(
-        onTap: () => display = display.abort(),
-        child: button,
-      );
+  Widget? _wrapCancelButton(BuildContext context, Widget? button) =>
+      button == null
+          ? null
+          : GestureDetector(
+              onTap: () => display = display.abort(),
+              child: button,
+            );
 
   final _focusNode = FocusScopeNode();
 
   bool _mustPopDialog = false;
-  bool _completeCalled = false;
   bool _closed = false;
   final _closeCompleter = Completer();
 }

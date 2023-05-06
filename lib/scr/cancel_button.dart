@@ -1,8 +1,6 @@
 part of lock_screen;
 
 class LockScreenCancel extends StatelessWidget {
-  static const none = LockScreenCancel._(button: SizedBox.shrink());
-
   const LockScreenCancel._({super.key, required this.button});
 
   const LockScreenCancel({super.key}) : button = const Icon(Icons.cancel);

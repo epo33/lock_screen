@@ -2,8 +2,7 @@ part of lock_screen;
 
 abstract class LockScreenDisplay<T> {
   factory LockScreenDisplay({bool autoCancel = false}) => _LockScreenDisplay<T>(
-        cancelButton:
-            autoCancel ? const LockScreenCancel() : LockScreenCancel.none,
+        cancelButton: autoCancel ? const LockScreenCancel() : null,
       );
 
   double? get progress;
@@ -12,7 +11,7 @@ abstract class LockScreenDisplay<T> {
 
   Widget? get showWidget;
 
-  LockScreenCancel get cancelButton;
+  LockScreenCancel? get cancelButton;
 
   bool get aborted;
 
@@ -35,7 +34,7 @@ abstract class LockScreenDisplay<T> {
 
   LockScreenDisplay setShowWidget(Widget? showWidget);
 
-  LockScreenDisplay setCancelButton(LockScreenCancel cancelButton);
+  LockScreenDisplay setCancelButton(LockScreenCancel? cancelButton);
 
   LockScreenDisplay abort();
 }
@@ -45,7 +44,7 @@ class _LockScreenDisplay<T> implements LockScreenDisplay<T> {
     this.progress,
     this.message,
     this.showWidget,
-    this.cancelButton = LockScreenCancel.none,
+    this.cancelButton,
     this.width,
     this.height,
     this.aborted = false,
@@ -61,7 +60,7 @@ class _LockScreenDisplay<T> implements LockScreenDisplay<T> {
   final Widget? showWidget;
 
   @override
-  final LockScreenCancel cancelButton;
+  final LockScreenCancel? cancelButton;
 
   @override
   final double? width;
@@ -133,7 +132,7 @@ class _LockScreenDisplay<T> implements LockScreenDisplay<T> {
         showWidget: showWidget,
         width: width,
         height: height,
-        cancelButton: cancelButton ?? LockScreenCancel.none,
+        cancelButton: cancelButton,
         aborted: aborted,
       );
 
@@ -166,7 +165,7 @@ class _LockScreenDisplayProxy<T> implements LockScreenDisplay<T> {
   Widget? get showWidget => _display.showWidget;
 
   @override
-  LockScreenCancel get cancelButton => _display.cancelButton;
+  LockScreenCancel? get cancelButton => _display.cancelButton;
 
   @override
   double? get width => _display.width;
@@ -243,7 +242,7 @@ class _LockScreenDisplayProxy<T> implements LockScreenDisplay<T> {
           showWidget: showWidget,
           width: width,
           height: height,
-          cancelButton: cancelButton ?? LockScreenCancel.none,
+          cancelButton: cancelButton,
         ),
       );
 
